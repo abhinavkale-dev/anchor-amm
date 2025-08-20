@@ -24,15 +24,15 @@ pub enum AMMError {
 }
 
 impl From<CurveError> for AMMError {
-    fn from(error: CurveError) -> AmmError {
+    fn from(error: CurveError) -> AMMError {
         match error {
-            CurveError::InvalidPrecision      => AmmError::InvalidPrecision,
-            CurveError::Overflow              => AmmError::Overflow,
-            CurveError::Underflow             => AmmError::Underflow,
-            CurveError::InvalidFeeAmount      => AmmError::InvalidFee,
-            CurveError::InsufficientBalance   => AmmError::Insufficientbalance,
-            CurveError::ZeroBalance           => AmmError::ZeroBalance,
-            CurveError::SlippageLimitExceeded => AmmError::SlippageExceded,
+            CurveError::InvalidPrecision      => AMMError::InvalidPrecision,
+            CurveError::Overflow              => AMMError::Overflow,
+            CurveError::Underflow             => AMMError::Underflow,
+            CurveError::InvalidFeeAmount      => AMMError::InvalidAmount,
+            CurveError::InsufficientBalance   => AMMError::InsufficientBalance,
+            CurveError::ZeroBalance           => AMMError::ZeroBalance,
+            CurveError::SlippageLimitExceeded => AMMError::SlippageExceeded,
         }
     }
 }

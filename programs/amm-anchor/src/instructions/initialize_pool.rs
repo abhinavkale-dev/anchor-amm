@@ -16,7 +16,7 @@ pub struct Initialize<'info> {
 
     #[account(
         init,
-        payer = admin
+        payer = admin,
         seeds = [b"abc", seed.to_le_bytes().as_ref()],
         bump,
         space = Config::INIT_SPACE,
@@ -42,25 +42,30 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = admin,
-        seeds = [b"lp_mint", config.key.as_ref()],
+        seeds = [b"lp_mint", config.key().as_ref()],
         bump,
         mint::decimals = 6,
         mint::authority = config
     )]
-    pub lp_mint: Account<'info, Mint>
+    pub lp_mint: Account<'info, Mint>,
+
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 impl <'info> Initialize <'info> {
     pub fn initialize(&mut self, seed: u64, fee: u16, authority: Option<Pubkey>, bumps: &InitializeBumps) -> Result<()> {
-    self.config.set_inner(Config{
+        self.config.set_inner(Config {
+        seed,
         authority,
-        fee,
         mint_x: self.mint_x.key(),
         mint_y: self.mint_y.key(),
+        fee,
         locked: false,
         config_bump: bumps.config,
-        lp_bump: bumps.mint_lp,
-        seed
+        lp_bump: bumps.lp_mint,
+        reserved: [0; 32],
     });
     Ok(())
     }

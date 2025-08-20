@@ -4,8 +4,8 @@ use anchor_lang::prelude::*;
 pub struct Config {
     pub seed: u64,
     pub authority: Option<Pubkey>,
-    pub min_x: Pubkey,
-    pub min_y: Pubkey,
+    pub mint_x: Pubkey,
+    pub mint_y: Pubkey,
     pub fee: u16,
     pub locked: bool,
     pub config_bump: u8,
@@ -14,5 +14,5 @@ pub struct Config {
 }
 
 impl Space for Config {
-    const INIT_SPACE: usize = 8 + 8 + 32 + 1 + 32*2 + 2 + 1 + 1*2 + 32;
+    const INIT_SPACE: usize = 8 + 8 + (1 + 32) + (32 * 2) + 2 + 1 + 1 + 1 + 32;
 }
