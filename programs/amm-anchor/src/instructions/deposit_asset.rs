@@ -79,8 +79,8 @@ impl<'info> Deposit<'info> {
         max_y: u64,
     ) -> Result<()> {
         
-        require!(self.config.locked == false, AmmError::PoolLocked);
-        require!(amount!=0, AmmError::InvalidAmount);
+        require!(self.config.locked == false, AMMError::PoolLocked);
+        require!(amount!=0, AMMError::InvalidAmount);
         let (x, y) = match
         self.mint_lp.supply == 0         
         && self.vault_x.amount == 0      
@@ -94,7 +94,7 @@ impl<'info> Deposit<'info> {
                     self.mint_lp.supply,     
                     amount,                  
                     6                        
-                ).map_err(AmmError::from)?;
+                ).map_err(AMMError::from)?;
                 (amounts.x, amounts.y)
             }
         };            
