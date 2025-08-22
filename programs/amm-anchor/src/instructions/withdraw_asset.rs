@@ -80,7 +80,7 @@ impl<'info> Withdraw<'info> {
         min_y: u64
     ) -> Result<()> {
 
-            require!(self.config.locked == false, AmmError::PoolLocked);
+            require!(self.config.locked == false, AMMError::PoolLocked);
             require!(amount != 0, AMMError::InvalidAmount);
 
             let amounts = ConstantProduct::xy_withdraw_amounts_from_l(
@@ -91,7 +91,7 @@ impl<'info> Withdraw<'info> {
                 6
             ).map_err(AMMError::from)?;
 
-            require!(amounts.x >= min_x && amounts.y >= min_y, AmmError::SlippageExceded);
+            require!(amounts.x >= min_x && amounts.y >= min_y, AMMError::SlippageExceeded);
 
             self.withdraw_tokens(true, amount)?;
             self.withdraw_tokens(false, amount)?;
@@ -132,13 +132,16 @@ impl<'info> Withdraw<'info> {
     }
 
     pub fn burn_lp_tokens(&mut self, amount: u64) -> Result<()> {
+
+        let cpi_program = self.token_program.to_account_info();
+
         let cpi_accounts = Burn {
             mint: self.mint_lp.to_account_info(),
             from: self.user_lp.to_account_info(),
             authority: self.user.to_account_info()
         };
 
-        let ctx = CpiContext::new(self.token_program.to_account_info(), cpi_accounts);
+        let ctx = CpiContext::new(cpi_program, cpi_accounts);
 
         burn(ctx, amount)
     }
