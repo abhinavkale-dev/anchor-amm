@@ -93,8 +93,8 @@ impl<'info> Withdraw<'info> {
 
             require!(amounts.x >= min_x && amounts.y >= min_y, AMMError::SlippageExceeded);
 
-            self.withdraw_tokens(true, amount)?;
-            self.withdraw_tokens(false, amount)?;
+            self.withdraw_tokens(true, amounts.x)?;
+            self.withdraw_tokens(false, amounts.y)?;
             self.burn_lp_tokens(amount)?;
 
             Ok(())
