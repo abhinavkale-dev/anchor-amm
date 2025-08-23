@@ -50,12 +50,17 @@ describe("AMM Tests", () => {
     
     await connection.confirmTransaction(adminAirdrop);
     await connection.confirmTransaction(userAirdrop);
+    console.log("Airdrop successful for", admin.publicKey.toBase58());
 
     mint_x = await createMint(connection, admin, admin.publicKey, admin.publicKey, DECIMALS);
     mint_y = await createMint(connection, admin, admin.publicKey, admin.publicKey, DECIMALS);
+    console.log("Mint X:", mint_x.toString());
+    console.log("Mint Y:", mint_y.toString());
 
     vault_x = await getAssociatedTokenAddress(mint_x, config, true);
     vault_y = await getAssociatedTokenAddress(mint_y, config, true);
+    console.log("Vault X:", vault_x.toBase58());
+    console.log("Vault Y:", vault_y.toBase58());
 
     user_x = (await getOrCreateAssociatedTokenAccount(connection, user, mint_x, user.publicKey)).address;
     user_y = (await getOrCreateAssociatedTokenAccount(connection, user, mint_y, user.publicKey)).address;
@@ -65,7 +70,10 @@ describe("AMM Tests", () => {
   });
 
   it("Initialize pool", async () => {
-    await program.methods
+    console.log("Config PDA:", config.toString());
+    console.log("LP Mint:", mint_lp.toBase58());
+    
+    const tx = await program.methods
       .initialize(seed, fee, admin.publicKey)
       .accountsStrict({
         admin: admin.publicKey,
@@ -82,6 +90,8 @@ describe("AMM Tests", () => {
       .signers([admin])
       .rpc();
 
+    console.log("Your transaction signature", tx);
+    
     const configAccount = await program.account.config.fetch(config);
     assert.equal(configAccount.fee, fee);
     assert.equal(configAccount.locked, false);
@@ -89,12 +99,13 @@ describe("AMM Tests", () => {
 
   it("Deposit liquidity", async () => {
     user_lp = (await getOrCreateAssociatedTokenAccount(connection, user, mint_lp, user.publicKey)).address;
+    console.log("User Token Account LP:", user_lp.toBase58());
 
     const depositAmount = new BN(100 * 10 ** DECIMALS);
     const maxX = new BN(50 * 10 ** DECIMALS);
     const maxY = new BN(50 * 10 ** DECIMALS);
 
-    await program.methods
+    const tx = await program.methods
       .deposit(depositAmount, maxX, maxY)
       .accountsStrict({
         user: user.publicKey,
@@ -114,18 +125,28 @@ describe("AMM Tests", () => {
       .signers([user])
       .rpc();
 
+    const vaultXBalance = await connection.getTokenAccountBalance(vault_x);
+    console.log("Vault X Balance:", vaultXBalance.value.uiAmount);
+    const vaultYBalance = await connection.getTokenAccountBalance(vault_y);
+    console.log("Vault Y Balance:", vaultYBalance.value.uiAmount);
     const userLpBalance = await connection.getTokenAccountBalance(user_lp);
+    console.log("User LP Token Account Balance:", userLpBalance.value.uiAmount);
+    console.log("Deposit transaction signature:", tx);
+    
     assert.ok(parseInt(userLpBalance.value.amount) > 0);
   });
 
   it("Swap X for Y", async () => {
+    console.log("Swap started");
     const swapAmount = new BN(5 * 10 ** DECIMALS);
     const minOut = new BN(1 * 10 ** DECIMALS);
 
     const userXBefore = await connection.getTokenAccountBalance(user_x);
+    console.log("User Token Account X Balance before swap:", userXBefore.value.uiAmount);
     const userYBefore = await connection.getTokenAccountBalance(user_y);
+    console.log("User Token Account Y Balance before swap:", userYBefore.value.uiAmount);
 
-    await program.methods
+    const tx = await program.methods
       .swap(true, swapAmount, minOut)
       .accountsStrict({
         user: user.publicKey,
@@ -144,21 +165,31 @@ describe("AMM Tests", () => {
       .signers([user])
       .rpc();
 
+    console.log("Swap transaction signature:", tx);
+    const vaultXBalance = await connection.getTokenAccountBalance(vault_x);
+    console.log("Vault X Balance After swap:", vaultXBalance.value.uiAmount);
+    const vaultYBalance = await connection.getTokenAccountBalance(vault_y);
+    console.log("Vault Y Balance After swap:", vaultYBalance.value.uiAmount);
     const userXAfter = await connection.getTokenAccountBalance(user_x);
+    console.log("User Token Account X Balance after swap:", userXAfter.value.uiAmount);
     const userYAfter = await connection.getTokenAccountBalance(user_y);
+    console.log("User Token Account Y Balance after swap:", userYAfter.value.uiAmount);
 
     assert.ok(parseInt(userXAfter.value.amount) < parseInt(userXBefore.value.amount));
     assert.ok(parseInt(userYAfter.value.amount) > parseInt(userYBefore.value.amount));
   });
 
   it("Swap Y for X", async () => {
+    console.log("Swap started");
     const swapAmount = new BN(3 * 10 ** DECIMALS);
     const minOut = new BN(1 * 10 ** DECIMALS);
 
     const userXBefore = await connection.getTokenAccountBalance(user_x);
+    console.log("User Token Account X Balance before swap:", userXBefore.value.uiAmount);
     const userYBefore = await connection.getTokenAccountBalance(user_y);
+    console.log("User Token Account Y Balance before swap:", userYBefore.value.uiAmount);
 
-    await program.methods
+    const tx = await program.methods
       .swap(false, swapAmount, minOut)
       .accountsStrict({
         user: user.publicKey,
@@ -177,15 +208,22 @@ describe("AMM Tests", () => {
       .signers([user])
       .rpc();
 
+    console.log("Swap transaction signature:", tx);
+    const vaultXBalance = await connection.getTokenAccountBalance(vault_x);
+    console.log("Vault X Balance After swap:", vaultXBalance.value.uiAmount);
+    const vaultYBalance = await connection.getTokenAccountBalance(vault_y);
+    console.log("Vault Y Balance After swap:", vaultYBalance.value.uiAmount);
     const userXAfter = await connection.getTokenAccountBalance(user_x);
+    console.log("User Token Account X Balance after swap:", userXAfter.value.uiAmount);
     const userYAfter = await connection.getTokenAccountBalance(user_y);
+    console.log("User Token Account Y Balance after swap:", userYAfter.value.uiAmount);
 
     assert.ok(parseInt(userXAfter.value.amount) > parseInt(userXBefore.value.amount));
     assert.ok(parseInt(userYAfter.value.amount) < parseInt(userYBefore.value.amount));
   });
 
   it("Lock and unlock pool", async () => {
-    await program.methods
+    const lockTx = await program.methods
       .lock()
       .accountsStrict({
         user: admin.publicKey,
@@ -194,10 +232,12 @@ describe("AMM Tests", () => {
       .signers([admin])
       .rpc();
 
+    console.log("Lock transaction signature:", lockTx);
+    
     let configAccount = await program.account.config.fetch(config);
     assert.equal(configAccount.locked, true);
 
-    await program.methods
+    const unlockTx = await program.methods
       .unlock()
       .accountsStrict({
         user: admin.publicKey,
@@ -206,20 +246,23 @@ describe("AMM Tests", () => {
       .signers([admin])
       .rpc();
 
+    console.log("Unlock transaction signature:", unlockTx);
+    
     configAccount = await program.account.config.fetch(config);
     assert.equal(configAccount.locked, false);
   });
 
   it("Withdraw liquidity", async () => {
+    console.log("Withdraw started");
+    
     const userLpBefore = await connection.getTokenAccountBalance(user_lp);
+    const userXBefore = await connection.getTokenAccountBalance(user_x);
+    const userYBefore = await connection.getTokenAccountBalance(user_y);
     const withdrawAmount = new BN(parseInt(userLpBefore.value.amount) / 2);
     const minX = new BN(1 * 10 ** DECIMALS);
     const minY = new BN(1 * 10 ** DECIMALS);
 
-    const userXBefore = await connection.getTokenAccountBalance(user_x);
-    const userYBefore = await connection.getTokenAccountBalance(user_y);
-
-    await program.methods
+    const tx = await program.methods
       .withdraw(withdrawAmount, minX, minY)
       .accountsStrict({
         user: user.publicKey,
@@ -238,6 +281,12 @@ describe("AMM Tests", () => {
       })
       .signers([user])
       .rpc();
+
+    console.log("Withdraw transaction signature:", tx);
+    const vaultXBalance = await connection.getTokenAccountBalance(vault_x);
+    console.log("Vault X Balance After withdraw:", vaultXBalance.value.uiAmount);
+    const vaultYBalance = await connection.getTokenAccountBalance(vault_y);
+    console.log("Vault Y Balance After withdraw:", vaultYBalance.value.uiAmount);
 
     const userLpAfter = await connection.getTokenAccountBalance(user_lp);
     const userXAfter = await connection.getTokenAccountBalance(user_x);
