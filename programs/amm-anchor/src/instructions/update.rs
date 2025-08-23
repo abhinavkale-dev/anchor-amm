@@ -9,7 +9,7 @@ pub struct Update<'info> {
 
     #[account(
         mut, 
-        seeds = [b"update", config.seed.to_le_bytes().as_ref()],
+        seeds = [b"config", config.seed.to_le_bytes().as_ref()],
         bump = config.config_bump
     )]
     pub config: Account<'info, Config>
