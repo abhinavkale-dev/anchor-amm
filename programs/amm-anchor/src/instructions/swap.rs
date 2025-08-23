@@ -92,7 +92,7 @@ impl<'info> Swap<'info> {
         require!(response.deposit != 0 && response.withdraw != 0, AMMError::InvalidAmount);
 
         self.deposit_token(is_x, response.deposit)?;
-        self.withdraw_token(is_x, response.withdraw)?;
+        self.withdraw_token(!is_x, response.withdraw)?;
 
         Ok(())
         
